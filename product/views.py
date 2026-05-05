@@ -4,10 +4,11 @@ from rest_framework.response import Response
 from rest_framework import status
 from product.models import Category,Product,Review
 from .serializers import CategoryListSerializer,ProductListSerializer,ReviewsListSerializer
+from django.db.models import Count
 
 @api_view(['GET'])
 def category_list_api_view(request):
-    categories = Category.objects.all()
+    categories = Category.objects.annotate(products_count=Count('product') )
     data = CategoryListSerializer(categories,many=True).data
 
     return Response(
@@ -16,7 +17,7 @@ def category_list_api_view(request):
     )
 
 @api_view(['GET'])
-def category_api_view(requesr,id):
+def category_api_view(request,id):
     try:
         category = Category.objects.get(id=id)
     except:
