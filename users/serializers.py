@@ -9,8 +9,6 @@ class UserAuthenSerializer(serializers.Serializer):
     password = serializers.CharField()
 
 
-
-
 class UserRegisterSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
