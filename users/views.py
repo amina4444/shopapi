@@ -9,6 +9,7 @@ from rest_framework.authtoken.models import Token
 import secrets
 from users.models import ConfirmCode
 from rest_framework.views import APIView
+from users.models import CustomUser
 
 class ConfirmAPIView(APIView):
 
@@ -43,11 +44,11 @@ class RegistrationAPIView(APIView):
         serializer = UserRegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        username = serializer.validated_data['username']
+        email = serializer.validated_data['email']
         password = serializer.validated_data['password']
 
-        user = User.objects.create_user(
-            username=username,
+        user = CustomUser.objects.create_user(
+            email=email,
             password=password,
             is_active=False
         )
@@ -68,10 +69,10 @@ class AuthorizationAPIView(APIView):
         serializer = UserAuthenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        username = serializer.validated_data['username'] 
+        email = serializer.validated_data['email'] 
         password = serializer.validated_data['password'] 
 
-        user = authenticate(username=username, password=password)  # user/None
+        user = authenticate(email=email, password=password)  # user/None
         if user:
             try:
                 token = Token.objects.get(user=user)
