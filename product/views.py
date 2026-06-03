@@ -8,12 +8,36 @@ from django.db.models import Count
 from django.db import transaction
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAuthenticated
+from common.permissions import IsOwner,IsAnonymous , IsModerator
+from rest_framework.pagination import PageNumberPagination
+
+
+# PAGE_SIZE = 5
+
+
+# class CustomPagination(PageNumberPagination):
+#     def get_paginated_response(self, data):
+#         return Response(
+#             OrderedDict(
+#                 [
+#                     ("total", self.page.paginator.count),
+#                     ("next", self.get_next_link()),
+#                     ("previous", self.get_previous_link()),
+#                     ("results", data),
+#                 ]
+#             )
+#         )
+
+#     def get_page_size(self, request):
+#         return PAGE_SIZE
 
 
 
 class CategoryListAPIView(ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryListSerializer
+    # pagination_class = CustomPagination
 
 
 class CategoryAPIView(RetrieveUpdateDestroyAPIView):
@@ -25,16 +49,46 @@ class CategoryAPIView(RetrieveUpdateDestroyAPIView):
 class ProductListAPIView(ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductListSerializer
+    # pagination_class = CustomPagination
+    permission_classes = [IsOwner | IsAnonymous | IsModerator]
+
+    def post(self, request, *args, **kwargs):
+        if request.user.is_staff:
+         return Response(
+            {"detail": "Moderators cannot create products"},
+            status=status.HTTP_403_FORBIDDEN )
+
+        serializer = ProductValidatorSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(status=status.HTTP_400_BAD_REQUEST,
+                             data=serializer.errors)
+
+        title = serializer.validated_data.get('title')
+        description = serializer.validated_data.get('description')
+        price = serializer.validated_data.get('price')
+        category = serializer.validated_data.get('category')
+
+        product = Product.objects.create(
+            title=title,
+            description=description,
+            price=price,
+            category_id=category,
+            owner=request.user,)
+        product.save()
+
+        return Response(status=status.HTTP_201_CREATED,data=ProductListSerializer(product).data)
 
 
 class ProductAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductListSerializer
     lookup_field = 'id'
+    permission_classes = [IsOwner | IsAnonymous | IsModerator]
 
 
 class ReviewListAPIView(ListCreateAPIView):
     queryset = Review.objects.all()
+    # pagination_class = CustomPagination
     serializer_class = ReviewsListSerializer
     
 

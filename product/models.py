@@ -1,4 +1,5 @@
 from django.db import models
+from users.models import CustomUser
 
 
 # Create your models here.
@@ -14,9 +15,17 @@ class Product(models.Model):
     description = models.TextField(null=True, blank=True)
     price = models.PositiveIntegerField()
     category = models.ForeignKey(Category,on_delete=models.CASCADE)
+    owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
 
     def __str__(self):
-        return  f'{self.title} - {self.category}'
+        return self.title 
+    
+
+    # class Meta:
+    #     verbose_name = "Товар"
+    #     verbose_name_plural = "Товары"
+
+
 
 class Review(models.Model):
     text = models.TextField(null=True, blank=True)

@@ -2,7 +2,7 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from users.serializers import UserRegisterSerializer,UserAuthenSerializer
+from users.serializers import UserRegisterSerializer,UserAuthenSerializer,ConfirmationSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
@@ -10,8 +10,10 @@ import secrets
 from users.models import ConfirmCode
 from rest_framework.views import APIView
 from users.models import CustomUser
+from rest_framework.generics import CreateAPIView
 
-class ConfirmAPIView(APIView):
+class ConfirmAPIView(CreateAPIView):
+    serializer_class = ConfirmationSerializer
 
     def post(self, request):
 
@@ -38,7 +40,8 @@ class ConfirmAPIView(APIView):
 
     
 
-class RegistrationAPIView(APIView):
+class RegistrationAPIView(CreateAPIView):
+    serializer_class = UserRegisterSerializer
 
     def post(self, request):
         serializer = UserRegisterSerializer(data=request.data)
@@ -63,7 +66,8 @@ class RegistrationAPIView(APIView):
             'code': code })
 
 
-class AuthorizationAPIView(APIView):
+class AuthorizationAPIView(CreateAPIView):
+    serializer_class = UserAuthenSerializer
 
     def post(self, request):
         serializer = UserAuthenSerializer(data=request.data)
