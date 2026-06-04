@@ -2,7 +2,8 @@ from django.shortcuts import render
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from users.serializers import UserRegisterSerializer,UserAuthenSerializer,ConfirmationSerializer
+from users.serializers import (UserRegisterSerializer,UserAuthenSerializer,ConfirmationSerializer,
+CustomTokenObtainPairSerializer)
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
@@ -11,6 +12,11 @@ from users.models import ConfirmCode
 from rest_framework.views import APIView
 from users.models import CustomUser
 from rest_framework.generics import CreateAPIView
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+class CustomTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomTokenObtainPairSerializer
+
 
 class ConfirmAPIView(CreateAPIView):
     serializer_class = ConfirmationSerializer

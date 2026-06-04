@@ -2,6 +2,7 @@ from rest_framework import serializers
 from .models import Category,Product,Review
 from django.db.models import Avg
 from rest_framework.exceptions import ValidationError
+from common.validators import validate_birthdate
 
 class CategoryListSerializer(serializers.ModelSerializer):
     products_count = serializers.IntegerField(read_only=True)
@@ -40,6 +41,14 @@ class ProductValidatorSerializer(serializers.Serializer):
         except Category.DoesNotExist:
             raise ValidationError('Category does not exist!')
         return category
+    
+    def validate(self, attrs):
+        token = self.context["request"].auth
+        birthdate = token.get("birthdate")
+
+        validate_birthdate(birthdate)
+
+        return attrs
 
 class ReviewValidatorSerializer(serializers.Serializer):
     text = serializers.CharField(required=False, default="No text")

@@ -6,10 +6,10 @@ from users.models import CustomUser
 
 @admin.register(CustomUser)
 class CustomUserAdmin(UserAdmin):
-    list_display = ("id", "email", "is_active", "is_staff", "is_superuser")
+    list_display = ("id", "email", "is_active", "is_staff", "is_superuser", "birthdate",)
     ordering = ("email",)
     fieldsets = (
-        (None, {"fields": ("email", "password")}),
+        (None, {"fields": ("email", "password", "birthdate",)}),
         (
             "Permissions",
             {
@@ -19,6 +19,7 @@ class CustomUserAdmin(UserAdmin):
                     "is_superuser",
                     "groups",
                     "user_permissions",
+                    
                 ),
             },
         ),
@@ -29,7 +30,7 @@ class CustomUserAdmin(UserAdmin):
             None,
             {
                 "classes": ("wide",),
-                "fields": ("email", "usable_password", "password1", "password2"),
+                "fields": ("email", "birthdate","usable_password", "password1", "password2"),
             },
         ),
     )

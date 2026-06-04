@@ -58,7 +58,7 @@ class ProductListAPIView(ListCreateAPIView):
             {"detail": "Moderators cannot create products"},
             status=status.HTTP_403_FORBIDDEN )
 
-        serializer = ProductValidatorSerializer(data=request.data)
+        serializer = ProductValidatorSerializer(data=request.data,context={"request": request})
         if not serializer.is_valid():
             return Response(status=status.HTTP_400_BAD_REQUEST,
                              data=serializer.errors)
