@@ -13,6 +13,7 @@ from rest_framework.views import APIView
 from users.models import CustomUser
 from rest_framework.generics import CreateAPIView
 from rest_framework_simplejwt.views import TokenObtainPairView
+from django.core.cache import cache
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -25,26 +26,25 @@ class ConfirmAPIView(CreateAPIView):
 
         user_id = request.data.get('user_id')
         code = request.data.get('code')
-        try: 
-           confirm = ConfirmCode.objects.get(user_id=user_id)
-        except  ConfirmCode.DoesNotExist:
+        redis_code = cache.get(f"confirm code-{user_id}")
+
+        if not redis_code:
             return Response(
                 {'error': 'Confirm code not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        if confirm.code == code:
-            confirm.user.is_active = True
-            confirm.user.save()
+        if redis_code == code:
+            user = CustomUser.objects.get(id=user_id)
+            user.is_active = True
+            user.save()
 
-            confirm.is_confirmed = True
-            confirm.save()
+            cache.delete(f"confirm code-{user_id}")
             
             return Response(status=status.HTTP_200_OK)
 
         return Response(status=status.HTTP_400_BAD_REQUEST)
 
-    
 
 class RegistrationAPIView(CreateAPIView):
     serializer_class = UserRegisterSerializer
@@ -62,11 +62,9 @@ class RegistrationAPIView(CreateAPIView):
             is_active=False
         )
         code = str(secrets.randbelow(1000000)).zfill(6)
+        cache.set(f"confirm code-{user.id}", code,timeout=300)
 
-        ConfirmCode.objects.create(
-            user=user,
-            code=code
-        )
+        
         return Response(status=status.HTTP_201_CREATED,
         data={'use_id': user.id,
             'code': code })

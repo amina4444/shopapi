@@ -11,33 +11,35 @@ from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from common.permissions import IsOwner,IsAnonymous , IsModerator
 from rest_framework.pagination import PageNumberPagination
+from collections import OrderedDict
+from django.core.cache import cache
 
 
-# PAGE_SIZE = 5
+PAGE_SIZE = 5
 
 
-# class CustomPagination(PageNumberPagination):
-#     def get_paginated_response(self, data):
-#         return Response(
-#             OrderedDict(
-#                 [
-#                     ("total", self.page.paginator.count),
-#                     ("next", self.get_next_link()),
-#                     ("previous", self.get_previous_link()),
-#                     ("results", data),
-#                 ]
-#             )
-#         )
+class CustomPagination(PageNumberPagination):
+    def get_paginated_response(self, data):
+        return Response(
+            OrderedDict(
+                [
+                    ("total", self.page.paginator.count),
+                    ("next", self.get_next_link()),
+                    ("previous", self.get_previous_link()),
+                    ("results", data),
+                ]
+            )
+        )
 
-#     def get_page_size(self, request):
-#         return PAGE_SIZE
+    def get_page_size(self, request):
+        return PAGE_SIZE
 
 
 
 class CategoryListAPIView(ListCreateAPIView):
     queryset = Category.objects.all()
     serializer_class = CategoryListSerializer
-    # pagination_class = CustomPagination
+    pagination_class = CustomPagination
 
 
 class CategoryAPIView(RetrieveUpdateDestroyAPIView):
@@ -49,7 +51,7 @@ class CategoryAPIView(RetrieveUpdateDestroyAPIView):
 class ProductListAPIView(ListCreateAPIView):
     queryset = Product.objects.all()
     serializer_class = ProductListSerializer
-    # pagination_class = CustomPagination
+    pagination_class = CustomPagination
     permission_classes = [IsOwner | IsAnonymous | IsModerator]
 
     def post(self, request, *args, **kwargs):
@@ -78,6 +80,20 @@ class ProductListAPIView(ListCreateAPIView):
 
         return Response(status=status.HTTP_201_CREATED,data=ProductListSerializer(product).data)
 
+    def get(self, request, *args,**kwargs):
+        cached_data = cache.get("product_list")
+        if cached_data:
+            print("redis data")
+            return Response(data=cached_data, status=status.HTTP_200_OK)
+        response = super().get(self, request, *args,**kwargs)
+        print ("postgres data")
+        if response.data.get("total", 0) > 0:
+            cache.set("product_list", response.data,timeout=60)
+        return response
+
+        
+
+
 
 class ProductAPIView(RetrieveUpdateDestroyAPIView):
     queryset = Product.objects.all()
@@ -88,7 +104,7 @@ class ProductAPIView(RetrieveUpdateDestroyAPIView):
 
 class ReviewListAPIView(ListCreateAPIView):
     queryset = Review.objects.all()
-    # pagination_class = CustomPagination
+    pagination_class = CustomPagination
     serializer_class = ReviewsListSerializer
     
 
