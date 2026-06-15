@@ -14,6 +14,7 @@ from users.models import CustomUser
 from rest_framework.generics import CreateAPIView
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.core.cache import cache
+from users.tasks import add,send_otp_mail,send_great_mail
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     serializer_class = CustomTokenObtainPairSerializer
@@ -26,6 +27,7 @@ class ConfirmAPIView(CreateAPIView):
 
         user_id = request.data.get('user_id')
         code = request.data.get('code')
+        
         redis_code = cache.get(f"confirm code-{user_id}")
 
         if not redis_code:
@@ -36,8 +38,11 @@ class ConfirmAPIView(CreateAPIView):
 
         if redis_code == code:
             user = CustomUser.objects.get(id=user_id)
+
+
             user.is_active = True
             user.save()
+            send_great_mail.delay(user.email)
 
             cache.delete(f"confirm code-{user_id}")
             
@@ -63,6 +68,7 @@ class RegistrationAPIView(CreateAPIView):
         )
         code = str(secrets.randbelow(1000000)).zfill(6)
         cache.set(f"confirm code-{user.id}", code,timeout=300)
+        send_otp_mail.delay(email=email, code=code)
 
         
         return Response(status=status.HTTP_201_CREATED,
@@ -74,6 +80,11 @@ class AuthorizationAPIView(CreateAPIView):
     serializer_class = UserAuthenSerializer
 
     def post(self, request):
+        #todo
+        add.delay(10,9)
+        # from time import sleep
+        # sleep(15)
+
         serializer = UserAuthenSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
